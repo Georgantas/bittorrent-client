@@ -1,0 +1,2 @@
+/home/john/bittorrent-client/build/CMakeFiles/rebuild_cache.dir
+/home/john/bittorrent-client/build/CMakeFiles/edit_cache.dir
