@@ -5,11 +5,11 @@ set -euo pipefail
 
 ## INSTALL GTEST ON TRAVIS ##
 cd /usr/src/gtest
-sudo cmake CMakeLists.txt
-sudo make
-sudo cp *.a /usr/lib
-sudo ln -s /usr/lib/libgtest.a /usr/local/lib/gtest/libgtest.a
-sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/gtest/libgtest_main.a
+cmake CMakeLists.txt
+make
+cp *.a /usr/lib
+ln -s /usr/lib/libgtest.a /usr/local/lib/gtest/libgtest.a
+ln -s /usr/lib/libgtest_main.a /usr/local/lib/gtest/libgtest_main.a
 cd -
 ## END INSTALL GTEST ON TRAVIS ##
 
