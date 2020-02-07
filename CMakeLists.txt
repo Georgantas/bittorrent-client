@@ -3,7 +3,7 @@ project(Bittorrent_client LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS OFF) # for portability
 
 # Code Coverage Configuration
 add_library(coverage_config INTERFACE)
