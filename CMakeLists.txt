@@ -24,7 +24,6 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif(CODE_COVERAGE)
 
 add_subdirectory(src)
-add_subdirectory(unittests)
 add_subdirectory(libraries/googletest)
 
 option (BUILD_TESTING "Build the testing tree." ON)
