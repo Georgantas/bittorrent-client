@@ -12,4 +12,4 @@ cmake --build . --config Debug -- -j $(nproc)
 ctest -j $(nproc) --output-on-failure
 
 # run unit tests
-./unittests
+./unittests/unittests
