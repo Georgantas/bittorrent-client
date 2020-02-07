@@ -1,6 +1,5 @@
 
-find_package(GTest)
-add_executable(unit_tests test.cpp)
-target_include_directories(unit_tests PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-target_link_libraries(unit_tests PRIVATE gtest gtest_main bittorrent_lib) # gtest_main provides the main
-add_test(NAME Unit_Tests COMMAND unit_tests) # add a single CTest, the GTest unit tests
+add_executable(tests complex_main.cpp)
+target_link_libraries(tests PRIVATE bittorrent_lib)
+
+add_test(NAME SampleTest COMMAND tests)
