@@ -4,6 +4,7 @@
 set -euo pipefail
 
 # INSTALL GTEST FOR TRAVIS
+tree
 cd libraries/googletest
 cmake .
 cmake --build .
