@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # for portability
 
-# Code Coverage Configuration
+# coverage_config only for adding --coverage flag to linker and compiler
+# when DCODE_COVERAGE flag is set
 add_library(coverage_config INTERFACE)
 
 option(CODE_COVERAGE "Enable coverage reporting" OFF)
@@ -24,7 +25,7 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif(CODE_COVERAGE)
 
 add_subdirectory(src)
-add_subdirectory(libraries/googletest)
+add_subdirectory(libraries)
 
 option (BUILD_TESTING "Build the testing tree." ON)
 # Only build tests if we are the top-level project

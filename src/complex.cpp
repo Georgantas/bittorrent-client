@@ -1,4 +1,5 @@
 #include "complex.hpp"
+#include "bencode.hpp"
 
 Complex::Complex(double _real, double _imaginary) {
 	this->real = _real;

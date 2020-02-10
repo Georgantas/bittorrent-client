@@ -1,0 +1,30 @@
+# -*- python -*-
+
+bfg9000_required_version('>=0.5.0')
+project('bencodehpp', version='0.3-dev')
+
+global_options([opts.std(argv.std)], lang='c++')
+
+includes = header_directory('include', include='*.hpp')
+
+install(includes)
+
+test_files = find_paths('test', '*.cpp')
+boost = boost_package(version='>=1.23')
+
+try:
+    libmettle = package('mettle', headers=['mettle.hpp'])
+    mettle = test_driver(['mettle', '--output=verbose'])
+
+    for src in test_files:
+        test(executable(
+            src.stripext().suffix,
+            files=src,
+            includes=includes,
+            packages=[boost, libmettle]
+        ), driver=mettle)
+except PackageResolutionError:
+    warning('mettle not found; tests disabled')
+
+pkg_config()
+extra_dist(files=['README.md', 'CHANGES.md', 'LICENSE'])
