@@ -15,6 +15,7 @@ addons:
     packages:
     - lcov
     - libboost-all-dev
+    - libssl-dev
 
 # install dependencies (use wget, configure, make, ...)
 install:
