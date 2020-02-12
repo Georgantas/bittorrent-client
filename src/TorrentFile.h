@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #pragma once
 
@@ -11,7 +12,12 @@ class TorrentFile {
  public:
   static TorrentFile BuildFromStream(std::istream& stream);
 
-  std::string& get_announce();
+  std::string& getAnnounce();
+  Sha1Hash& getInfoHash();
+  std::vector<Sha1Hash>& getPiecesHash();
+  std::uint64_t& getPieceLength();
+  std::uint64_t& getLength();
+  std::string& getName();
 
  private:
   TorrentFile(std::string announce, Sha1Hash infoHash,

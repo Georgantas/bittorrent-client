@@ -35,7 +35,8 @@ std::vector<Sha1Hash> TorrentFile::buildPieces(std::string hashStream) {
 
   for (size_t i = 0; i < numberOfHashes; ++i) {
     Sha1Hash hash;
-    std::copy(&hashStream[i], &hashStream[i + hash.size()], hash.begin());
+    std::copy(&hashStream[i * 20], &hashStream[i * 20 + hash.size()],
+              hash.begin());
     pieces.push_back(hash);
   }
 
@@ -49,6 +50,8 @@ std::vector<Sha1Hash> TorrentFile::buildPieces(std::string hashStream) {
 
 /// \todo georgantas 2020-Feb-10 Try using boost::serialization
 /// https://www.boost.org/doc/libs/1_72_0/libs/serialization/doc/tutorial.html
+/// Archive implementations:
+/// https://sourceforge.net/p/protoc/code/ci/master/tree/
 TorrentFile TorrentFile::BuildFromStream(std::istream& stream) {
   auto data = bencode::decode(stream);
   auto torrent = boost::get<bencode::dict>(data);
@@ -78,4 +81,9 @@ TorrentFile::TorrentFile(std::string announce, Sha1Hash infoHash,
       length(length),
       name(name) {}
 
-std::string& TorrentFile::get_announce() { return announce; }
+std::string& TorrentFile::getAnnounce() { return announce; }
+Sha1Hash& TorrentFile::getInfoHash() { return infoHash; }
+std::vector<Sha1Hash>& TorrentFile::getPiecesHash() { return piecesHash; }
+std::uint64_t& TorrentFile::getPieceLength() { return pieceLength; }
+std::uint64_t& TorrentFile::getLength() { return length; }
+std::string& TorrentFile::getName() { return name; }
