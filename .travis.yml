@@ -27,7 +27,7 @@ script: ./tools/build.sh
 after_success:
 - lcov --directory . --capture --output-file coverage.info
 # filter out system and extra files.
-- lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' 'libraries/' --output-file coverage.info
+- lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' './libraries/' --output-file coverage.info
 # output coverage data for debugging (optional)
 - lcov --list coverage.info
 # upload to CodeCov
