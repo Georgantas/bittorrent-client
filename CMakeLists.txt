@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.1)
 project(Bittorrent_client LANGUAGES CXX)
 
+# use set_target_properties instead?
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # for portability
@@ -22,7 +23,13 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   else()
     target_link_libraries(coverage_config INTERFACE --coverage)
   endif()
-endif(CODE_COVERAGE)
+endif()
+
+# todo: integrate include-what-you-use
+# https://stackoverflow.com/questions/30951492/how-to-use-the-tool-include-what-you-use-together-with-cmake-to-detect-unused-he
+
+# todo: integrate clang-tidy
+# http://mariobadr.com/using-clang-tidy-with-cmake-36.html
 
 add_subdirectory(libraries)
 add_subdirectory(src)

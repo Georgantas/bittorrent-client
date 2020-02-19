@@ -24,12 +24,6 @@ class TorrentFile {
               std::vector<Sha1Hash> piecesHash, std::uint64_t pieceLength,
               std::uint64_t length, std::string name);
 
-  static Sha1Hash calculateInfoHash(std::string piecesHash,
-                                    uint64_t pieceLength, uint64_t length,
-                                    std::string name);
-
-  static std::vector<Sha1Hash> buildPieces(std::string hashes);
-
   std::string announce;  // url of the tracker
   Sha1Hash infoHash;
   std::vector<Sha1Hash> piecesHash;  // hashes of all the pieces

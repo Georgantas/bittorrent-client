@@ -5,29 +5,17 @@
 #include <bencode.hpp>
 #include <memory>
 
-Sha1Hash TorrentFile::calculateInfoHash(std::string piecesHash,
-                                        uint64_t pieceLength, uint64_t length,
-                                        std::string name) {
-  std::string bencodeInfoString;
-
-  std::string piecesLengthBasicString(&pieceLength,
-                                      &pieceLength + sizeof(pieceLength));
-  std::string lengthBasicString(&length, &length + sizeof(length));
-
-  bencodeInfoString += piecesHash;
-  bencodeInfoString += piecesLengthBasicString;
-  bencodeInfoString += lengthBasicString;
-  bencodeInfoString += name;
-
+namespace {
+Sha1Hash calculateInfoHash(std::string bencodeInfo) {
   Sha1Hash infoHash;
 
-  SHA1((const uint8_t*)bencodeInfoString.c_str(), bencodeInfoString.size(),
+  SHA1((const uint8_t*)bencodeInfo.c_str(), bencodeInfo.size(),
        infoHash.begin());
 
   return infoHash;
 }
 
-std::vector<Sha1Hash> TorrentFile::buildPieces(std::string hashStream) {
+std::vector<Sha1Hash> buildPieces(std::string hashStream) {
   std::size_t numberOfHashes = hashStream.size() / 20;
 
   std::vector<Sha1Hash> pieces;
@@ -42,6 +30,7 @@ std::vector<Sha1Hash> TorrentFile::buildPieces(std::string hashStream) {
 
   return pieces;
 }
+}  // namespace
 
 // integer = long long
 // string = std::string
@@ -64,7 +53,7 @@ TorrentFile TorrentFile::BuildFromStream(std::istream& stream) {
   std::uint64_t length = boost::get<bencode::integer>(bencodeInfo["length"]);
   std::string name = boost::get<bencode::string>(bencodeInfo["name"]);
 
-  Sha1Hash infoHash = calculateInfoHash(piecesHash, pieceLength, length, name);
+  Sha1Hash infoHash = calculateInfoHash(bencode::encode(bencodeInfo));
   std::vector<Sha1Hash> pieces = buildPieces(piecesHash);
 
   return TorrentFile(announce, infoHash, pieces, pieceLength, length, name);
