@@ -3,7 +3,7 @@
 
 [![codecov](https://codecov.io/gh/Georgantas/bittorrent-client/branch/master/graph/badge.svg)](https://codecov.io/gh/Georgantas/bittorrent-client)
 
-This project implements the bittorent P2P protocol: https://www.bittorrent.org/beps/bep_0003.html
+This project implements the bittorrent P2P protocol: https://www.bittorrent.org/beps/bep_0003.html
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`

@@ -81,5 +81,6 @@
         "variant": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "Google",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
 }

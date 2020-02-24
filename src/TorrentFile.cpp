@@ -6,8 +6,8 @@
 #include <memory>
 
 namespace {
-Sha1Hash calculateInfoHash(std::string bencodeInfo) {
-  Sha1Hash infoHash;
+bittorrent::Sha1Hash calculateInfoHash(std::string bencodeInfo) {
+  bittorrent::Sha1Hash infoHash;
 
   SHA1((const uint8_t*)bencodeInfo.c_str(), bencodeInfo.size(),
        infoHash.begin());
@@ -15,14 +15,14 @@ Sha1Hash calculateInfoHash(std::string bencodeInfo) {
   return infoHash;
 }
 
-std::vector<Sha1Hash> buildPieces(std::string hashStream) {
+std::vector<bittorrent::Sha1Hash> buildPieces(std::string hashStream) {
   std::size_t numberOfHashes = hashStream.size() / 20;
 
-  std::vector<Sha1Hash> pieces;
+  std::vector<bittorrent::Sha1Hash> pieces;
   pieces.reserve(numberOfHashes);
 
   for (size_t i = 0; i < numberOfHashes; ++i) {
-    Sha1Hash hash;
+    bittorrent::Sha1Hash hash;
     std::copy(&hashStream[i * 20], &hashStream[i * 20 + hash.size()],
               hash.begin());
     pieces.push_back(hash);
@@ -32,6 +32,7 @@ std::vector<Sha1Hash> buildPieces(std::string hashStream) {
 }
 }  // namespace
 
+namespace bittorrent {
 // integer = long long
 // string = std::string
 // list = std::vector<bencode::data>
@@ -41,7 +42,7 @@ std::vector<Sha1Hash> buildPieces(std::string hashStream) {
 /// https://www.boost.org/doc/libs/1_72_0/libs/serialization/doc/tutorial.html
 /// Archive implementations:
 /// https://sourceforge.net/p/protoc/code/ci/master/tree/
-TorrentFile TorrentFile::BuildFromStream(std::istream& stream) {
+TorrentFile TorrentFile::buildFromStream(std::istream& stream) {
   auto data = bencode::decode(stream);
   auto torrent = boost::get<bencode::dict>(data);
   auto announce = boost::get<bencode::string>(torrent["announce"]);
@@ -70,9 +71,12 @@ TorrentFile::TorrentFile(std::string announce, Sha1Hash infoHash,
       length(length),
       name(name) {}
 
-std::string& TorrentFile::getAnnounce() { return announce; }
-Sha1Hash& TorrentFile::getInfoHash() { return infoHash; }
-std::vector<Sha1Hash>& TorrentFile::getPiecesHash() { return piecesHash; }
-std::uint64_t& TorrentFile::getPieceLength() { return pieceLength; }
-std::uint64_t& TorrentFile::getLength() { return length; }
-std::string& TorrentFile::getName() { return name; }
+const std::string& TorrentFile::getAnnounce() const { return announce; }
+const Sha1Hash& TorrentFile::getInfoHash() const { return infoHash; }
+const std::vector<Sha1Hash>& TorrentFile::getPiecesHash() const {
+  return piecesHash;
+}
+const std::uint64_t& TorrentFile::getPieceLength() const { return pieceLength; }
+const std::uint64_t& TorrentFile::getLength() const { return length; }
+const std::string& TorrentFile::getName() const { return name; }
+}  // namespace bittorrent
