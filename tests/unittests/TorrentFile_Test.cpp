@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+/// \todo unit_tests -> bittorrent::unit_tests
 namespace unit_tests {
 TEST(TorrentFileTest, buildFromStream) {
   std::ifstream file_stream("archlinux.iso.torrent");

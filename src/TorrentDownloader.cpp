@@ -61,6 +61,7 @@ std::string TorrentDownloader::buildUrlToGetPeers(
   return url;
 }
 
-void downloadTorrentToFile(TorrentFile torrentFile, std::string path) {}
+void TorrentDownloader::downloadTorrentToFile(const TorrentFile& torrentFile,
+                                              const std::string& path) {}
 
 }  // namespace bittorrent

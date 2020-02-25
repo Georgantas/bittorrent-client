@@ -23,7 +23,8 @@ class TorrentDownloader {
 
   uint16_t& getPort();
 
-  void downloadTorrentToFile(const TorrentFile& torrentFile, std::string path);
+  void downloadTorrentToFile(const TorrentFile& torrentFile,
+                             const std::string& path);
 
  private:
   friend class unit_tests::TorrentDownloaderTest_buildUrlToGetPeers_Test;
