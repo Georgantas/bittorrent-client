@@ -25,7 +25,7 @@ TrackerResponse TrackerResponse::buildFromBencode(std::string bencodeData) {
     auto upper = uint16_t((unsigned char)(peersBitstream[i * 6 + 4])) << 8;
     auto lower = uint16_t((unsigned char)(peersBitstream[i * 6 + 5]));
     uint16_t port = (upper | lower);
-    peers.push_back(peer{.ip = ip, .port = port});
+    peers.push_back(peer({ip, port}));
   }
 
   return TrackerResponse(peers, interval);
