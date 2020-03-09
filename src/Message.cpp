@@ -12,6 +12,8 @@ std::string Message::serialize() {
   result += payloadSize;
   result += messageID;
   result += payload;
+
+  return result;
 }
 
 Message Message::deserialize(std::string serial) {
