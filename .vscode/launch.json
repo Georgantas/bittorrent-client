@@ -9,7 +9,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
-            "args": [],
+            "args": [
+                "${workspaceFolder}/tests/unittests/archlinux.iso.torrent",
+                "${workspaceFolder}/build/archlinux.iso"
+            ],
             "stopAtEntry": false,
             "cwd": "${command:cmake.launchTargetDirectory}",
             "environment": [],

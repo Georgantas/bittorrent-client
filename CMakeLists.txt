@@ -33,6 +33,7 @@ endif()
 
 add_subdirectory(libraries)
 add_subdirectory(src)
+add_subdirectory(programs)
 
 option (BUILD_TESTING "Build the testing tree." ON)
 # Only build tests if we are the top-level project
