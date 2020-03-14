@@ -2,9 +2,15 @@
 #include <TorrentDownloader.h>
 #include <TorrentFile.h>
 #include <TrackerResponse.h>
+#include <blockingconcurrentqueue.h>
 #include <curl/curl.h>
 
+#include <algorithm>
+#include <atomic>
 #include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
 
 namespace {
 std::string urlEscapeString(std::string str) {
@@ -31,9 +37,110 @@ size_t writeFunction(void* ptr, size_t size, size_t nmemb, std::string* data) {
   data->append((char*)ptr, size * nmemb);
   return size * nmemb;
 }
+
+struct work {
+  size_t index;
+  bittorrent::Sha1Hash hash;
+  size_t length;
+};
+
+struct piece {
+  size_t index;
+  std::vector<char> content;
+};
+
+moodycamel::ConcurrentQueue<work> workQueue;
+
+moodycamel::ConcurrentQueue<piece> resultsQueue;
+
+std::atomic<size_t> activeWorkers;
+std::atomic<bool> close;
+
+void startDownloadWorker(bittorrent::peer& peer) {
+  while (!close.load()) {
+    if (work w; workQueue.try_dequeue(w)) {
+      if (peer.port % 2 == 0) {
+        // process
+        resultsQueue.enqueue(
+            piece{w.index, std::vector<char>(w.length, w.index)});
+      } else {
+        // put back
+        workQueue.enqueue(w);
+        std::this_thread::yield();
+      }
+    }
+  }
+
+  activeWorkers--;
+}
+
 }  // namespace
 
 namespace bittorrent {
+
+/// \todo Shorten this function
+std::string TorrentDownloader::downloadTorrent(const TorrentFile& torrentFile) {
+  std::cout << "Downloading " + torrentFile.getName() << std::endl;
+
+  bittorrent::TrackerResponse trackerResponse = requestPeers(torrentFile);
+
+  auto peers = trackerResponse.getPeers();
+  // auto refreshInterval = trackerResponse.getRefreshInterval();
+
+  // fill the work queue
+  auto pieceHashes = torrentFile.getPiecesHash();
+  auto numberOfPieces = pieceHashes.size();
+
+  for (size_t i = 0; i < numberOfPieces; ++i) {
+    // calculate piece length
+    size_t begin = i * torrentFile.getPieceLength();
+    size_t end = begin + torrentFile.getPieceLength();
+    if (end > torrentFile.getLength()) {
+      end = torrentFile.getLength();
+    }
+
+    size_t pieceLength = end - begin;
+
+    work w{i, pieceHashes[i], pieceLength};
+    workQueue.enqueue(w);
+  }
+
+  // start workers
+  std::vector<std::thread> workers;
+  activeWorkers = peers.size();
+
+  for (auto& peer : peers) {
+    workers.push_back(std::thread(startDownloadWorker, std::ref(peer)));
+  }
+
+  // combine pieces
+  std::string ret(torrentFile.getLength(), 0);
+  size_t piecesProcessed = 0;
+  while (piecesProcessed < numberOfPieces) {
+    if (piece result; resultsQueue.try_dequeue(result)) {
+      // calculate bounds of piece
+      size_t begin = result.index * torrentFile.getPieceLength();
+      size_t end = begin + torrentFile.getPieceLength();
+      if (end > torrentFile.getLength()) {
+        end = torrentFile.getLength();
+      }
+      std::copy(result.content.begin(), result.content.end(), &ret[begin]);
+      piecesProcessed++;
+
+      float percent = static_cast<float>(piecesProcessed) /
+                      static_cast<float>(numberOfPieces) * 100.f;
+
+      printf("(%0.2f%%) Downloaded piece %lu from %lu peers\n", percent,
+             result.index, activeWorkers.load());
+    }
+  }
+  close = true;
+  std::for_each(workers.begin(), workers.end(),
+                [](auto& worker) { worker.join(); });
+
+  return ret;
+}
+
 TorrentDownloader::TorrentDownloader(Sha1Hash peerId, uint16_t port)
     : peerId(peerId), port(port) {}
 
@@ -98,8 +205,5 @@ TrackerResponse TorrentDownloader::requestPeers(
 
   return TrackerResponse::buildFromBencode(response_string);
 }
-
-void TorrentDownloader::downloadTorrentToFile(const TorrentFile& torrentFile,
-                                              const std::string& path) {}
 
 }  // namespace bittorrent

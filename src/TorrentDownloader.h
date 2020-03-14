@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <Sha1Hash.h>
+
 #include <array>
 #include <string>
-#include <Sha1Hash.h>
 
 namespace unit_tests {
 class TorrentDownloaderTest_buildUrlToGetPeers_Test;
@@ -26,8 +27,7 @@ class TorrentDownloader {
 
   uint16_t& getPort();
 
-  void downloadTorrentToFile(const TorrentFile& torrentFile,
-                             const std::string& path);
+  std::string downloadTorrent(const TorrentFile& torrentFile);
 
  private:
   friend class unit_tests::TorrentDownloaderTest_buildUrlToGetPeers_Test;

@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
             "args": [
-                "${workspaceFolder}/tests/unittests/archlinux.iso.torrent",
+                "${workspaceFolder}/testdata/archlinux-2020.03.01-x86_64.iso.torrent",
                 "${workspaceFolder}/build/archlinux.iso"
             ],
             "stopAtEntry": false,
