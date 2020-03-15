@@ -22,7 +22,7 @@ addons:
     - curl
 
 env:
-  - CC=gcc-8 AR=gcc-ar-8 NM=gcc-nm-8 RANLIB=gcc-ranlib-8
+  - CC=gcc-8 && CXX=g++-8
 
 # install dependencies (use wget, configure, make, ...)
 install:
