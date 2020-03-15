@@ -13,6 +13,7 @@ git:
 addons:
   apt:
     packages:
+    - g++-7
     - lcov
     - libboost-all-dev
     - libssl-dev
