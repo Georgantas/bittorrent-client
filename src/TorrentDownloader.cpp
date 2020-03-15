@@ -2,7 +2,7 @@
 #include <TorrentDownloader.h>
 #include <TorrentFile.h>
 #include <TrackerResponse.h>
-#include <blockingconcurrentqueue.h>
+#include <concurrentqueue.h>
 #include <curl/curl.h>
 
 #include <algorithm>
