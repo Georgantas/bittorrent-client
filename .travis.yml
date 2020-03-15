@@ -15,11 +15,14 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - g++-7
+    - g++-8
     - lcov
     - libboost-all-dev
     - libssl-dev
     - curl
+
+env:
+  - CC=gcc-8 AR=gcc-ar-8 NM=gcc-nm-8 RANLIB=gcc-ranlib-8
 
 # install dependencies (use wget, configure, make, ...)
 install:
