@@ -24,7 +24,11 @@ int main(int argc, char *argv[]) {
   bittorrent::TorrentFile torrentFile =
       bittorrent::TorrentFile::buildFromStream(inputStream);
 
-  std::string res = torrentDownloader.downloadTorrent(torrentFile);
+  std::string content = torrentDownloader.downloadTorrent(torrentFile);
 
-  std::cout << res << std::endl;
+  std::ofstream outputFile(outputPath);
+
+  outputFile << content;
+
+  return 0;
 }

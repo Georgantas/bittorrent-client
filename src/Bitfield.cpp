@@ -4,7 +4,7 @@
 namespace bittorrent {
 Bitfield::Bitfield(std::vector<unsigned char> bits) : bits(bits) {}
 
-bool Bitfield::hasPiece(size_t index) {
+bool Bitfield::hasPiece(size_t index) const {
   size_t byteIndex = index / 8;
   size_t offset = index % 8;
   return (bits[byteIndex] >> (7 - offset) & 1) != 0;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <Sha1Hash.h>
+#include <TrackerResponse.h>
 
 #include <array>
 #include <string>
@@ -14,7 +15,6 @@ class TorrentDownloaderTest_requestPeers_Test;
 
 namespace bittorrent {
 
-class TrackerResponse;
 class TorrentFile;
 
 class TorrentDownloader {
@@ -34,6 +34,9 @@ class TorrentDownloader {
   std::string buildUrlToGetPeers(const TorrentFile& torrentFile) const;
 
   TrackerResponse requestPeers(const TorrentFile& torrentFile) const;
+
+  void startDownloadWorker(const bittorrent::peer& peer,
+                           const TorrentFile& torrentFile);
 
   Sha1Hash peerId;
   uint16_t port;

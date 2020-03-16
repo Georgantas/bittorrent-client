@@ -8,7 +8,7 @@ class Bitfield {
  public:
   Bitfield(std::vector<unsigned char> bits);
 
-  bool hasPiece(size_t index);
+  bool hasPiece(size_t index) const;
 
   void setPiece(size_t index);
 

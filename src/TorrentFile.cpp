@@ -1,19 +1,10 @@
 
 #include <TorrentFile.h>
-#include <openssl/sha.h>
 
 #include <bencode.hpp>
 #include <memory>
 
 namespace {
-bittorrent::Sha1Hash calculateInfoHash(std::string bencodeInfo) {
-  bittorrent::Sha1Hash infoHash;
-
-  SHA1((const uint8_t*)bencodeInfo.c_str(), bencodeInfo.size(),
-       infoHash.begin());
-
-  return infoHash;
-}
 
 std::vector<bittorrent::Sha1Hash> buildPieces(std::string hashStream) {
   std::size_t numberOfHashes = hashStream.size() / 20;
@@ -54,7 +45,7 @@ TorrentFile TorrentFile::buildFromStream(std::istream& stream) {
   std::uint64_t length = boost::get<bencode::integer>(bencodeInfo["length"]);
   std::string name = boost::get<bencode::string>(bencodeInfo["name"]);
 
-  Sha1Hash infoHash = calculateInfoHash(bencode::encode(bencodeInfo));
+  Sha1Hash infoHash = calculateSha1Hash(bencode::encode(bencodeInfo));
   std::vector<Sha1Hash> pieces = buildPieces(piecesHash);
 
   return TorrentFile(announce, infoHash, pieces, pieceLength, length, name);

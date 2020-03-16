@@ -1,4 +1,6 @@
 
+#include <Bitfield.h>
+#include <ClientConnection.h>
 #include <TorrentDownloader.h>
 #include <TorrentFile.h>
 #include <TrackerResponse.h>
@@ -10,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <scope_guard.hpp>
 #include <thread>
 
 namespace {
@@ -33,11 +36,6 @@ std::string urlEscapeString(std::string str) {
   return res;
 }
 
-size_t writeFunction(void* ptr, size_t size, size_t nmemb, std::string* data) {
-  data->append((char*)ptr, size * nmemb);
-  return size * nmemb;
-}
-
 struct work {
   size_t index;
   bittorrent::Sha1Hash hash;
@@ -46,37 +44,72 @@ struct work {
 
 struct piece {
   size_t index;
-  std::vector<char> content;
+  std::string content;
 };
+
+std::atomic<size_t> activeWorkers;
 
 moodycamel::ConcurrentQueue<work> workQueue;
 
 moodycamel::ConcurrentQueue<piece> resultsQueue;
 
-std::atomic<size_t> activeWorkers;
-std::atomic<bool> close;
-
-void startDownloadWorker(bittorrent::peer& peer) {
-  while (!close.load()) {
-    if (work w; workQueue.try_dequeue(w)) {
-      if (peer.port % 2 == 0) {
-        // process
-        resultsQueue.enqueue(
-            piece{w.index, std::vector<char>(w.length, w.index)});
-      } else {
-        // put back
-        workQueue.enqueue(w);
-        std::this_thread::yield();
-      }
-    }
-  }
-
-  activeWorkers--;
-}
-
+std::atomic<bool> close;  // set to true to signal all pieces were processed
 }  // namespace
 
 namespace bittorrent {
+std::optional<std::string> downloadPiece(
+    const std::unique_ptr<ClientConnection>& clientConnection, const work& w) {
+  return std::nullopt;
+}
+
+void TorrentDownloader::startDownloadWorker(const peer& peer,
+                                            const TorrentFile& torrentFile) {
+  sg::make_scope_guard([] { activeWorkers--; });
+
+  std::unique_ptr<ClientConnection> clientConnection;
+
+  // fix 🤮
+  try {
+    clientConnection = std::make_unique<ClientConnection>(
+        peer, getPeerId(), torrentFile.getInfoHash(), torrentFile);
+  } catch (std::exception& e) {
+    std::cout << e.what();
+    return;
+  }
+
+  clientConnection->sendUnchoke();
+  clientConnection->sendInterested();
+
+  while (!close.load()) {
+    if (work w; workQueue.try_dequeue(w)) {
+      if (!clientConnection->getBitfield().hasPiece(w.index)) {
+        // put back
+        workQueue.enqueue(w);
+        std::this_thread::yield();
+        continue;
+      }
+
+      auto downloadedPiece = downloadPiece(clientConnection, w);
+      if (!downloadedPiece) {
+        // put back
+        workQueue.enqueue(w);
+        std::cout << "Could not download piece. Closing connection to client.";
+        return;
+      }
+
+      if (calculateSha1Hash(downloadedPiece.value()) != w.hash) {
+        workQueue.enqueue(w);
+        printf("Piece %lu failed integrity check.\n", w.index);
+        std::this_thread::yield();
+        // drop client instead? malicious? tcp data should be correct
+        continue;
+      }
+
+      clientConnection->sendHave(w.index);
+      resultsQueue.enqueue(piece{w.index, downloadedPiece.value()});
+    }
+  }
+}
 
 /// \todo Shorten this function
 std::string TorrentDownloader::downloadTorrent(const TorrentFile& torrentFile) {
@@ -110,7 +143,9 @@ std::string TorrentDownloader::downloadTorrent(const TorrentFile& torrentFile) {
   activeWorkers = peers.size();
 
   for (auto& peer : peers) {
-    workers.push_back(std::thread(startDownloadWorker, std::ref(peer)));
+    workers.push_back(
+        std::thread(std::bind(&TorrentDownloader::startDownloadWorker, this,
+                              std::cref(peer), std::cref(torrentFile))));
   }
 
   // combine pieces
@@ -174,6 +209,11 @@ std::string TorrentDownloader::buildUrlToGetPeers(
   return url;
 }
 
+size_t writeFunction(void* ptr, size_t size, size_t nmemb, std::string* data) {
+  data->append((char*)ptr, size * nmemb);
+  return size * nmemb;
+}
+
 TrackerResponse TorrentDownloader::requestPeers(
     const TorrentFile& torrentFile) const {
   std::string url = buildUrlToGetPeers(torrentFile);
@@ -188,6 +228,13 @@ TrackerResponse TorrentDownloader::requestPeers(
 
   std::string response_string;
   std::string header_string;
+
+  /*auto writeFunction = [](void* ptr, size_t size, size_t nmemb,
+                          std::string* data) -> size_t {
+    data->append((char*)ptr, size * nmemb);
+    return size * nmemb;
+  };*/
+
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunction);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
   curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_string);
