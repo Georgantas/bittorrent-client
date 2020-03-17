@@ -5,7 +5,7 @@
 
 namespace unit_tests {
 TEST(BitfieldTest, setBitAndHasPiece) {
-  std::vector<unsigned char> bits{0x01, 0x02, 0x03};
+  std::string bits{0x01, 0x02, 0x03};
   bittorrent::Bitfield bitfield(bits);
   EXPECT_EQ(true, bitfield.hasPiece(7));
   EXPECT_EQ(false, bitfield.hasPiece(6));

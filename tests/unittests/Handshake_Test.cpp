@@ -18,7 +18,11 @@ TEST(HandshakeTest, serializeAndDeserialize) {
       '0',        '-',        'k',        '8',        'h',        'j',
       '0',        'w',        'g',        'e',        'j',        '6',
       'c',        'h'};
-  auto res = bittorrent::Handshake::deserialize(toDeserialize);
+  int fd[2];
+  pipe(fd);
+
+  write(fd[1], toDeserialize.c_str(), toDeserialize.size());
+  auto res = bittorrent::Handshake::read(fd[0]);
 
   EXPECT_EQ(res.pstr, "BitTorrent protocol");
   bittorrent::Sha1Hash expectedInfoHash;
@@ -32,5 +36,8 @@ TEST(HandshakeTest, serializeAndDeserialize) {
   EXPECT_EQ(res.peerId, expectedPeerId);
 
   EXPECT_EQ(res.serialize(), toDeserialize);
+
+  close(fd[0]);
+  close(fd[1]);
 }
 }  // namespace unit_tests

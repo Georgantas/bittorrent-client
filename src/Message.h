@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 namespace bittorrent {
 enum MessageType {
@@ -21,7 +22,7 @@ struct Message {
   std::string payload;
 
   std::string serialize();
-  static Message deserialize(std::string serial);
+  static std::optional<Message> read(int fd);
 };
 
 }  // namespace bittorrent

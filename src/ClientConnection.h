@@ -3,15 +3,17 @@
 
 #include <Sha1Hash.h>
 #include <TrackerResponse.h>
+#include <optional>
 
 namespace bittorrent {
 class Bitfield;
 class TorrentFile;
+class Message;
 
 class ClientConnection {
  public:
   ClientConnection(const peer& peer, const Sha1Hash& peerId,
-                   const Sha1Hash& infoHash, const TorrentFile& torrentFile);
+                   const Sha1Hash& infoHash);
 
   ~ClientConnection();
 
@@ -22,7 +24,13 @@ class ClientConnection {
 
   void sendInterested();
 
-  void sendHave(size_t index);
+  void sendNotInterested();
+
+  void sendHave(uint32_t index);
+
+  void SendRequest(uint32_t index, uint32_t begin, uint32_t length);
+
+  std::optional<Message> readMessage();
 
   const Bitfield& getBitfield() const;
 

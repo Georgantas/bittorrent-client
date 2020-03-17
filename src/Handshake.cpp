@@ -1,5 +1,7 @@
 
 #include <Handshake.h>
+#include <unistd.h>
+#include <memory>
 
 namespace bittorrent {
 std::string Handshake::serialize() {
@@ -12,14 +14,27 @@ std::string Handshake::serialize() {
   return result;
 }
 
-Handshake Handshake::deserialize(std::string serial) {
-  unsigned char pstrLength = serial[0];
-  std::string pstr(&serial[1], &serial[1 + pstrLength]);
+Handshake Handshake::read(int fd) {
+  char pstrLength;
+
+  if (::read(fd, &pstrLength, sizeof(char)) <= 0) {
+    throw std::runtime_error("Error reading bytes.");
+  }
+
+  std::unique_ptr<char[]> data(new char[48 + pstrLength]);
+  if (::read(fd, data.get(), 48 + pstrLength) <= 0) {
+    throw std::runtime_error("Error reading bytes.");
+  }
+
+  std::string pstr(pstrLength, 0);
+  std::copy(&data[0], &data[pstrLength], pstr.begin());
+
   Sha1Hash infoHash;
-  std::copy(&serial[pstrLength + 9], &serial[pstrLength + 29],
-            infoHash.begin());
+  std::copy(&data[pstrLength + 8], &data[pstrLength + 28], infoHash.begin());
+
   Sha1Hash peerId;
-  std::copy(&serial[pstrLength + 29], &serial[pstrLength + 49], peerId.begin());
+  std::copy(&data[pstrLength + 28], &data[pstrLength + 48], peerId.begin());
+
   return {pstr, infoHash, peerId};
 }
 

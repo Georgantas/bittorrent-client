@@ -11,6 +11,6 @@ struct Handshake {
   const Sha1Hash peerId;
 
   std::string serialize();
-  static Handshake deserialize(std::string serial);
+  static Handshake read(int fd);
 };
 }  // namespace bittorrent

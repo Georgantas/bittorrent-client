@@ -2,7 +2,7 @@
 #include <Bitfield.h>
 
 namespace bittorrent {
-Bitfield::Bitfield(std::vector<unsigned char> bits) : bits(bits) {}
+Bitfield::Bitfield(std::string bits) : bits(bits) {}
 
 bool Bitfield::hasPiece(size_t index) const {
   size_t byteIndex = index / 8;

@@ -12,33 +12,17 @@
 
 namespace bittorrent {
 ClientConnection::ClientConnection(const peer& peer, const Sha1Hash& peerId,
-                                   const Sha1Hash& infoHash,
-                                   const TorrentFile& torrentFile)
+                                   const Sha1Hash& infoHash)
     : _peer(peer),
       peerId(peerId),
       infoHash(infoHash),
-      bitfield({0}),
+      bitfield(""),
       chocked(true) {
   sock = socket(AF_INET, SOCK_STREAM, 0);
 
   if (sock < 0) {
     throw std::runtime_error("Socket creation failure.");
   }
-
-  /*
-    struct timeval timeout;
-    timeout.tv_sec = 5;
-    timeout.tv_usec = 0;
-
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,
-                   sizeof(timeout)) < 0) {
-      throw std::runtime_error("Could not set receive timeout.");
-    }
-
-    if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout,
-                   sizeof(timeout)) < 0) {
-      throw std::runtime_error("Could not set send timeout.");
-    }*/
 
   struct sockaddr_in serv_addr;
   serv_addr.sin_family = AF_INET;
@@ -48,41 +32,83 @@ ClientConnection::ClientConnection(const peer& peer, const Sha1Hash& peerId,
               (uint32_t(peer.ip[2]) << 16) | (uint32_t(peer.ip[3]) << 24)};
 
   if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-    auto test = errno;
     throw std::runtime_error("Connection Failed");
   }
 
+  /*
+  struct timeval timeout;
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+
+  if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,
+                 sizeof(timeout)) < 0) {
+    throw std::runtime_error("Could not set receive timeout.");
+  }
+
+  if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout,
+                 sizeof(timeout)) < 0) {
+    throw std::runtime_error("Could not set send timeout.");
+  }
+  */
+
   // complete handshake
-  Handshake h{"BitTorrent protocol", infoHash, peerId};
-  auto handshakeSerial = h.serialize();
+  Handshake handshake{"BitTorrent protocol", infoHash, peerId};
+  auto handshakeSerial = handshake.serialize();
 
   send(sock, handshakeSerial.c_str(), handshakeSerial.size(), 0);
-  std::unique_ptr<char[]> buffer(new char[handshakeSerial.size()]);
-  if (read(sock, buffer.get(), handshakeSerial.size()) < 0 ||
-      handshakeSerial != std::string(buffer.get())) {
+
+  Handshake handshakeResponse = Handshake::read(sock);
+
+  if (handshakeResponse.infoHash != handshake.infoHash) {
     throw std::runtime_error("Handshake failed.");
   }
 
   // receive the bitfield
-  std::unique_ptr<char[]> buffer2(new char[torrentFile.getPiecesHash().size()]);
-
-  if (read(sock, buffer2.get(), torrentFile.getPiecesHash().size()) < 0) {
-    throw std::runtime_error("Could not receive the bitfield.");
+  auto message = readMessage();
+  if (!message || (message->messageID != MessageType::msgBitfield)) {
+    throw std::runtime_error("Could not receive bitfield.");
   }
 
-  Message message = Message::deserialize(buffer2.get());
-  if (message.messageID != MessageType::msgBitfield) {
-    throw std::runtime_error("Received wrong message. Bitfield not received.");
-  }
+  bitfield = Bitfield{message->payload};
 }
 
 ClientConnection::~ClientConnection() { close(sock); }
 
-void ClientConnection::sendUnchoke() {}
+void ClientConnection::sendUnchoke() {
+  auto msg = Message{MessageType::msgUnchoke}.serialize();
+  send(sock, msg.c_str(), msg.size(), 0);
+}
 
-void ClientConnection::sendInterested() {}
+void ClientConnection::sendInterested() {
+  auto msg = Message{MessageType::msgInterested}.serialize();
+  send(sock, msg.c_str(), msg.size(), 0);
+}
 
-void ClientConnection::sendHave(size_t index) {}
+void ClientConnection::sendNotInterested() {
+  auto msg = Message{MessageType::msgNotInterested}.serialize();
+  send(sock, msg.c_str(), msg.size(), 0);
+}
+
+void ClientConnection::sendHave(uint32_t index) {
+  std::string payload = {char(index >> 24), char(index >> 16), char(index >> 8),
+                         char(index)};
+  auto msg = Message{MessageType::msgHave, payload}.serialize();
+  send(sock, msg.c_str(), msg.size(), 0);
+}
+
+void ClientConnection::SendRequest(uint32_t index, uint32_t begin,
+                                   uint32_t length) {
+  std::string payload = {
+      char(index >> 24),  char(index >> 16),  char(index >> 8),  char(index),
+      char(begin >> 24),  char(begin >> 16),  char(begin >> 8),  char(begin),
+      char(length >> 24), char(length >> 16), char(length >> 8), char(length)};
+  auto msg = Message{MessageType::msgRequest, payload}.serialize();
+  send(sock, msg.c_str(), msg.size(), 0);
+}
+
+std::optional<Message> ClientConnection::readMessage() {
+  return Message::read(sock);
+}
 
 const Bitfield& ClientConnection::getBitfield() const { return bitfield; }
 

@@ -54,13 +54,17 @@ moodycamel::ConcurrentQueue<work> workQueue;
 moodycamel::ConcurrentQueue<piece> resultsQueue;
 
 std::atomic<bool> close;  // set to true to signal all pieces were processed
+
+// max number of bytes that can be requested
+const size_t maxBlockSize = 16384;
+
+// max number of requests to a client, we can make at once
+const size_t maxBacklog = 5;
 }  // namespace
 
 namespace bittorrent {
 std::optional<std::string> downloadPiece(
-    const std::unique_ptr<ClientConnection>& clientConnection, const work& w) {
-  return std::nullopt;
-}
+    const std::unique_ptr<ClientConnection>& clientConnection, const work& w) {}
 
 void TorrentDownloader::startDownloadWorker(const peer& peer,
                                             const TorrentFile& torrentFile) {
@@ -71,9 +75,9 @@ void TorrentDownloader::startDownloadWorker(const peer& peer,
   // fix 🤮
   try {
     clientConnection = std::make_unique<ClientConnection>(
-        peer, getPeerId(), torrentFile.getInfoHash(), torrentFile);
+        peer, getPeerId(), torrentFile.getInfoHash());
   } catch (std::exception& e) {
-    std::cout << e.what();
+    std::cout << e.what() << std::endl;
     return;
   }
 
@@ -85,7 +89,6 @@ void TorrentDownloader::startDownloadWorker(const peer& peer,
       if (!clientConnection->getBitfield().hasPiece(w.index)) {
         // put back
         workQueue.enqueue(w);
-        std::this_thread::yield();
         continue;
       }
 
@@ -93,14 +96,14 @@ void TorrentDownloader::startDownloadWorker(const peer& peer,
       if (!downloadedPiece) {
         // put back
         workQueue.enqueue(w);
-        std::cout << "Could not download piece. Closing connection to client.";
+        std::cout << "Could not download piece. Closing connection to client."
+                  << std::endl;
         return;
       }
 
       if (calculateSha1Hash(downloadedPiece.value()) != w.hash) {
         workQueue.enqueue(w);
         printf("Piece %lu failed integrity check.\n", w.index);
-        std::this_thread::yield();
         // drop client instead? malicious? tcp data should be correct
         continue;
       }
