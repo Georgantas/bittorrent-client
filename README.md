@@ -13,6 +13,7 @@ https://wiki.theory.org/index.php/BitTorrentSpecification
 - Resolve all "todo" comments.
 - Fix active workers.
 - Make stable.
+- Fix code cov (lcov incomplatible with gcc-8?)
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`
