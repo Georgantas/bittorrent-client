@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -24,11 +25,13 @@ int main(int argc, char *argv[]) {
   bittorrent::TorrentFile torrentFile =
       bittorrent::TorrentFile::buildFromStream(inputStream);
 
-  std::string content = torrentDownloader.downloadTorrent(torrentFile);
+  std::vector<char> content = torrentDownloader.downloadTorrent(torrentFile);
 
   std::ofstream outputFile(outputPath);
 
-  outputFile << content;
+  std::ostream_iterator<char> outputIterator(outputFile, "");
+
+  std::copy(content.begin(), content.end(), outputIterator);
 
   return 0;
 }

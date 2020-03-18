@@ -7,6 +7,7 @@
 
 #include <array>
 #include <string>
+#include <vector>
 
 namespace unit_tests {
 class TorrentDownloaderTest_buildUrlToGetPeers_Test;
@@ -27,7 +28,7 @@ class TorrentDownloader {
 
   uint16_t& getPort();
 
-  std::string downloadTorrent(const TorrentFile& torrentFile);
+  std::vector<char> downloadTorrent(const TorrentFile& torrentFile);
 
  private:
   friend class unit_tests::TorrentDownloaderTest_buildUrlToGetPeers_Test;

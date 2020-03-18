@@ -5,7 +5,7 @@
 
 namespace unit_tests {
 TEST(HandshakeTest, serializeAndDeserialize) {
-  std::string toDeserialize{
+  std::vector<char> toDeserialize{
       char(0x13), 'B',        'i',        't',        'T',        'o',
       'r',        'r',        'e',        'n',        't',        ' ',
       'p',        'r',        'o',        't',        'o',        'c',
@@ -21,10 +21,12 @@ TEST(HandshakeTest, serializeAndDeserialize) {
   int fd[2];
   pipe(fd);
 
-  write(fd[1], toDeserialize.c_str(), toDeserialize.size());
+  write(fd[1], &toDeserialize[0], toDeserialize.size());
   auto res = bittorrent::Handshake::read(fd[0]);
 
-  EXPECT_EQ(res.pstr, "BitTorrent protocol");
+  EXPECT_EQ(res.pstr,
+            std::vector<char>({'B', 'i', 't', 'T', 'o', 'r', 'r', 'e', 'n', 't',
+                               ' ', 'p', 'r', 'o', 't', 'o', 'c', 'o', 'l'}));
   bittorrent::Sha1Hash expectedInfoHash;
   std::copy(toDeserialize.begin() + 28, toDeserialize.begin() + 48,
             expectedInfoHash.begin());

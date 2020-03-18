@@ -1,6 +1,7 @@
 
 #include <Bitfield.h>
 #include <ClientConnection.h>
+#include <Message.h>
 #include <TorrentDownloader.h>
 #include <TorrentFile.h>
 #include <TrackerResponse.h>
@@ -9,6 +10,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -44,7 +46,7 @@ struct work {
 
 struct piece {
   size_t index;
-  std::string content;
+  std::vector<char> content;
 };
 
 std::atomic<size_t> activeWorkers;
@@ -56,15 +58,67 @@ moodycamel::ConcurrentQueue<piece> resultsQueue;
 std::atomic<bool> close;  // set to true to signal all pieces were processed
 
 // max number of bytes that can be requested
-const size_t maxBlockSize = 16384;
+const uint32_t maxBlockSize = 16384;
 
 // max number of requests to a client, we can make at once
-const size_t maxBacklog = 5;
+const uint32_t maxBacklog = 5;
 }  // namespace
 
 namespace bittorrent {
-std::optional<std::string> downloadPiece(
-    const std::unique_ptr<ClientConnection>& clientConnection, const work& w) {}
+std::vector<char> downloadPiece(
+    const std::unique_ptr<ClientConnection>& clientConnection, const work& w) {
+  std::vector<char> piece(w.length, '0');
+  size_t bytesDownloaded = 0;
+  size_t backlog = 0;
+  size_t bytesRequested = 0;
+  while (bytesDownloaded < w.length) {
+    if (!clientConnection->isChocked()) {
+      // make requests for pieces
+      while (backlog < maxBacklog && bytesRequested < w.length) {
+        size_t blockSize = maxBlockSize;
+        // trim the block size if the remaining bytes is lower than the block
+        // size
+        if ((w.length - bytesRequested) < blockSize) {
+          blockSize = w.length - bytesRequested;
+        }
+
+        clientConnection->sendRequest(w.index, bytesRequested, blockSize);
+
+        backlog++;
+        bytesRequested += blockSize;
+      }
+    }
+
+    // read message
+    auto msg = clientConnection->readMessage();
+    if (!msg) {
+      // keep-alive received
+      continue;
+    }
+
+    switch (msg->messageID) {
+      case MessageType::msgUnchoke:
+        /// \todo possible bug: some of the above requests are discared because
+        /// the client made too many requests at once
+        clientConnection->setChoked(false);
+        break;
+      case MessageType::msgChoke:
+        clientConnection->setChoked(true);
+        break;
+      case MessageType::msgHave:
+        clientConnection->setBit(Message::parseHave(msg.value()));
+        break;
+      case MessageType::msgPiece:
+        bytesDownloaded += Message::parsePiece(msg.value(), w.index, piece);
+        backlog--;
+        break;
+      default:
+        continue;
+    }
+  }
+
+  return piece;
+}
 
 void TorrentDownloader::startDownloadWorker(const peer& peer,
                                             const TorrentFile& torrentFile) {
@@ -92,16 +146,17 @@ void TorrentDownloader::startDownloadWorker(const peer& peer,
         continue;
       }
 
-      auto downloadedPiece = downloadPiece(clientConnection, w);
-      if (!downloadedPiece) {
+      std::vector<char> downloadedPiece;
+      try {
+        downloadedPiece = downloadPiece(clientConnection, w);
+      } catch (std::exception& e) {
         // put back
         workQueue.enqueue(w);
-        std::cout << "Could not download piece. Closing connection to client."
-                  << std::endl;
+        std::cout << e.what() << std::endl;
         return;
       }
 
-      if (calculateSha1Hash(downloadedPiece.value()) != w.hash) {
+      if (calculateSha1Hash(downloadedPiece) != w.hash) {
         workQueue.enqueue(w);
         printf("Piece %lu failed integrity check.\n", w.index);
         // drop client instead? malicious? tcp data should be correct
@@ -109,13 +164,14 @@ void TorrentDownloader::startDownloadWorker(const peer& peer,
       }
 
       clientConnection->sendHave(w.index);
-      resultsQueue.enqueue(piece{w.index, downloadedPiece.value()});
+      resultsQueue.enqueue(piece{w.index, downloadedPiece});
     }
   }
 }
 
 /// \todo Shorten this function
-std::string TorrentDownloader::downloadTorrent(const TorrentFile& torrentFile) {
+std::vector<char> TorrentDownloader::downloadTorrent(
+    const TorrentFile& torrentFile) {
   std::cout << "Downloading " + torrentFile.getName() << std::endl;
 
   bittorrent::TrackerResponse trackerResponse = requestPeers(torrentFile);
@@ -152,7 +208,7 @@ std::string TorrentDownloader::downloadTorrent(const TorrentFile& torrentFile) {
   }
 
   // combine pieces
-  std::string ret(torrentFile.getLength(), 0);
+  std::vector<char> ret(torrentFile.getLength(), 0);
   size_t piecesProcessed = 0;
   while (piecesProcessed < numberOfPieces) {
     if (piece result; resultsQueue.try_dequeue(result)) {

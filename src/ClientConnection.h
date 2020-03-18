@@ -3,6 +3,7 @@
 
 #include <Sha1Hash.h>
 #include <TrackerResponse.h>
+
 #include <optional>
 
 namespace bittorrent {
@@ -28,11 +29,17 @@ class ClientConnection {
 
   void sendHave(uint32_t index);
 
-  void SendRequest(uint32_t index, uint32_t begin, uint32_t length);
+  void sendRequest(uint32_t index, uint32_t begin, uint32_t length);
 
   std::optional<Message> readMessage();
 
   const Bitfield& getBitfield() const;
+
+  bool isChocked() const;
+
+  void setChoked(bool choked);
+
+  void setBit(size_t index);
 
  private:
   int sock;

@@ -1,19 +1,19 @@
 
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace bittorrent {
 class Bitfield {
  public:
-  Bitfield(std::string bits);
+  Bitfield(std::vector<char> bits);
 
-  bool hasPiece(size_t index) const;
+  bool hasPiece(uint32_t index) const;
 
-  void setPiece(size_t index);
+  void setPiece(uint32_t index);
 
  private:
-  std::string bits;
+  std::vector<char> bits;
 };
 }  // namespace bittorrent

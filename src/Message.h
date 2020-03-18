@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include <string>
 #include <optional>
+#include <vector>
 
 namespace bittorrent {
 enum MessageType {
@@ -19,10 +19,13 @@ enum MessageType {
 
 struct Message {
   MessageType messageID;
-  std::string payload;
+  std::vector<char> payload;
 
-  std::string serialize();
+  std::vector<char> serialize();
   static std::optional<Message> read(int fd);
+  static size_t parseHave(Message message);
+  static size_t parsePiece(Message message, size_t index,
+                           std::vector<char>& buf);
 };
 
 }  // namespace bittorrent

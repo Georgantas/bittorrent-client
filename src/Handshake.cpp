@@ -1,32 +1,45 @@
 
 #include <Handshake.h>
+#include <sys/socket.h>
 #include <unistd.h>
+
 #include <memory>
 
 namespace bittorrent {
-std::string Handshake::serialize() {
-  std::string result;
-  result += static_cast<char>(pstr.size());
-  result += pstr;
-  result += std::string(8, 0);  // 8 reserved bytes
-  result += std::string(infoHash.begin(), infoHash.end());
-  result += std::string(peerId.begin(), peerId.end());
+std::vector<char> Handshake::serialize() {
+  std::vector<char> result;
+  result.push_back(pstr.size());
+  result.insert(result.end(), pstr.begin(), pstr.end());
+  auto zeros = std::vector<char>(8, 0);
+  result.insert(result.end(), zeros.begin(), zeros.end());  // 8 reserved bytes
+  result.insert(result.end(), infoHash.begin(), infoHash.end());
+  result.insert(result.end(), peerId.begin(), peerId.end());
   return result;
 }
+
+int readn(int f, void *av, int n);
 
 Handshake Handshake::read(int fd) {
   char pstrLength;
 
-  if (::read(fd, &pstrLength, sizeof(char)) <= 0) {
-    throw std::runtime_error("Error reading bytes.");
+  // if (::read(fd, &pstrLength, sizeof(char)) <= 0) {
+  //  throw std::runtime_error("Error reading bytes.");
+  //}
+
+  if (readn(fd, &pstrLength, sizeof(char)) != sizeof(char)) {
+    throw std::runtime_error("Error reading bytes (handshake)");
   }
 
   std::unique_ptr<char[]> data(new char[48 + pstrLength]);
-  if (::read(fd, data.get(), 48 + pstrLength) <= 0) {
-    throw std::runtime_error("Error reading bytes.");
-  }
 
-  std::string pstr(pstrLength, 0);
+  if (readn(fd, data.get(), 48 + pstrLength) != 48 + pstrLength) {
+    throw std::runtime_error("Error reading bytes. (handshake #2)");
+  }
+  // if (::read(fd, data.get(), 48 + pstrLength) <= 0) {
+  //  throw std::runtime_error("Error reading bytes.");
+  //}
+
+  std::vector<char> pstr(pstrLength, 0);
   std::copy(&data[0], &data[pstrLength], pstr.begin());
 
   Sha1Hash infoHash;

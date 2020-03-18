@@ -82,7 +82,8 @@
         "csignal": "cpp",
         "codecvt": "cpp",
         "future": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "*.inc": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "Google",
     "editor.formatOnSave": true,

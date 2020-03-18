@@ -1,16 +1,17 @@
 
 #pragma once
 
-#include <string>
 #include <Sha1Hash.h>
+
+#include <vector>
 
 namespace bittorrent {
 struct Handshake {
-  const std::string pstr;
+  const std::vector<char> pstr;
   const Sha1Hash infoHash;
   const Sha1Hash peerId;
 
-  std::string serialize();
+  std::vector<char> serialize();
   static Handshake read(int fd);
 };
 }  // namespace bittorrent
