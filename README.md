@@ -11,6 +11,8 @@ https://wiki.theory.org/index.php/BitTorrentSpecification
 - Clean code.
 - Test
 - Resolve all "todo" comments.
+- Fix active workers.
+- Make stable.
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`
