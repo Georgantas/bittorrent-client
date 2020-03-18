@@ -14,6 +14,7 @@ https://wiki.theory.org/index.php/BitTorrentSpecification
 - Fix active workers.
 - Make stable.
 - Fix code cov (lcov incomplatible with gcc-8?)
+- Improve CMake: https://foonathan.net/2016/03/cmake-install/
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`
