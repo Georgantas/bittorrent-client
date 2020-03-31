@@ -16,6 +16,8 @@ https://wiki.theory.org/index.php/BitTorrentSpecification
 - Fix code cov (lcov incomplatible with gcc-8?)
 - Improve CMake: https://foonathan.net/2016/03/cmake-install/
 - Can use C++ bitfields?
+- Can we use std::future as a scope guard?
+- Update README.md
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`
