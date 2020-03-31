@@ -8,13 +8,14 @@ This project implements the bittorrent P2P protocol: https://www.bittorrent.org/
 https://wiki.theory.org/index.php/BitTorrentSpecification
 
 # TODO
-- Clean code.
+- Clean code (first do the obvious, and then go through effective c++, keep comments of strategies used)
 - Test
 - Resolve all "todo" comments.
 - Fix active workers.
 - Make stable.
 - Fix code cov (lcov incomplatible with gcc-8?)
 - Improve CMake: https://foonathan.net/2016/03/cmake-install/
+- Can use C++ bitfields?
 
 # Usage
 `torrent-cli [.torrent file] [output file name]`
